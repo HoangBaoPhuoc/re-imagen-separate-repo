@@ -1,0 +1,263 @@
+diff -Naur pyautoqemu-main/pyautoqemu/vm.py pyautoqemu-patch-main/pyautoqemu/vm.py
+--- pyautoqemu-main/pyautoqemu/vm.py	2023-10-05 16:35:52.000000000 +0200
++++ pyautoqemu-patch-main/pyautoqemu/vm.py	2024-11-19 16:33:01.565031000 +0100
+@@ -7,26 +7,48 @@
+ import string
+ import logging
+ import psutil
++import numpy as np
++import pytesseract
++from pytesseract import Output
++
+ 
+ # look for the keycodes e.g. at:
+ # https://docs.rs/qapi-qmp/0.8.0/qapi_qmp/enum.QKeyCode.html
+ # en keyboard layout
+ keycodes = {
+-        " ":"spc",
+-        ":":"shift-semicolon",
+-        ".":"dot",
+-        "-":"minus",
+-        "?":"shift-slash",
+-        "/":"slash",
+-        "+":"shift-equal",
+-        "=":"equal",
+-        "|":"shift-backslash",
+-        "{":"shift-bracket_left",
+-        "}":"shift-bracket_right",
+-        "[":"bracket_right",
+-        "]":"bracket_right",
+-        "\\":"backslash",
+-        }
++    " ": "spc",
++    ".": "dot",
++    ",": "comma",
++    "*": "asterisk",
++    ";": "semicolon",
++    "-": "minus",
++    "/": "slash",
++    "=": "equal",
++    "!": "shift-1",
++    "@": "shift-2",
++    "#": "shift-3",
++    "$": "shift-4",
++    "%": "shift-5",
++    "&": "shift-7",
++    "(": "shift-9",
++    ")": "shift-0",
++    "<": "shift-dot",
++    "'": "apostrophe",
++    "~": "shift-grave_accent",
++    ">": "shift-comma",
++    ":": "shift-semicolon",
++    "_": "shift-minus",
++    "?": "shift-slash",
++    "+": "shift-equal",
++    "|": "shift-backslash",
++    "{": "shift-bracket_left",
++    "}": "shift-bracket_right",
++    "[": "bracket_left",
++    "]": "bracket_right",
++    "\\": "backslash",
++    "\n": "ret",
++    "\t": "tab"
++}
+ 
+ for c in string.ascii_lowercase:
+     keycodes[c.upper()] = "shift-"+c
+@@ -180,62 +202,61 @@
+         Otherwise raises an exception.
+ 
+         @param templatefile: filename of the file containing the template image
+-        """ 
++        """
+ 
+         # hide the mouse pointer, otherwise the mouse pointer can hide a match
+         self.move_to(1919, 1079)
+         time.sleep(0.1)
+-        
+-        #method = cv2.TM_SQDIFF_NORMED
++
++        # method = cv2.TM_SQDIFF_NORMED
+         method = cv2.TM_CCOEFF_NORMED
+-       
++
+         # the image to be found in the desktop
+         template = cv2.imread(templatefile)
+         # desktop to search in
+         desktop_screenshot = "/tmp/screenshot.pbm"
+         self.screenshot(desktop_screenshot)
+         target = cv2.imread(desktop_screenshot)
+-        
++
+         # SQDIFF_NORMED: if minVal = 0 images are the same
+         result = cv2.matchTemplate(target, template, method)
+-        
++
+         # finds minimum and maximum and returns the corresponding coordinates
+-        _minVal, _maxVal, minLoc, maxLoc = cv2.minMaxLoc(result,None)
++        _minVal, _maxVal, minLoc, maxLoc = cv2.minMaxLoc(result, None)
+ 
+-        
+         # matchLoc contains x,y coordinates of upper left corner
+         if (method == cv2.TM_SQDIFF or method == cv2.TM_SQDIFF_NORMED):
+             # check certainity of match occurrence, otherwise raise error
+-            if _minVal > 0.1: 
++            if _minVal > 0.1:
+                 raise RuntimeError("cv_find: template couldn't be found")
+             matchLoc = minLoc
+         else:
+             # check certainity of match occurrence, otherwise raise error
+-            if _maxVal < 0.8: 
++            if _maxVal < 0.8:
+                 raise RuntimeError("cv_find: template couldn't be found")
+             matchLoc = maxLoc
+ 
+-        #print(matchLoc)
+-        #print(_minVal)
+-        #print(_maxVal)
++        # print(matchLoc)
++        # print(_minVal)
++        # print(_maxVal)
+ 
+         # determine height and width of the template / patch
+         template_height = template.shape[0]
+         template_width = template.shape[1]
+-        
++
+         # return center of the match
+-        return (matchLoc[0] + 0.5 * template_width, 
++        return (matchLoc[0] + 0.5 * template_width,
+                 matchLoc[1] + 0.5 * template_height)
+-        
++
+ 
+     def cv_wait(self, templatefilename, seconds):
+-        """ 
++        """
+         Waits until the template-image occurs in the current desktop.
+-        If found, returns (x,y) tuple of the coordinates. 
++        If found, returns (x,y) tuple of the coordinates.
+         In case of timeout, raises an exception.
+ 
+         @param templatefilename: filename of the template image
+-        """ 
++        """
+ 
+         timeout = seconds
+ 
+@@ -245,11 +266,113 @@
+                 return matchLoc
+             except RuntimeError as err:
+                 timeout -= 0.1
+-                if timeout == 0:
++                if timeout <= 0:
+                     raise RuntimeError("cv_wait: template couldn't be found")
+                 time.sleep(0.1)
+                 pass
+ 
++
++        # structure and some code taken from https://pyimagesearch.com/2020/05/25/tesseract-ocr-text-localization-and-detection/
++    def tesseract_find(self, templatetext, showpicture=False, xmin=0, ymin=0):
++
++        # hide the mouse pointer, otherwise the mouse pointer can hide a match
++        self.move_to(1919, 1079)
++        time.sleep(0.5)
++
++        ocrscreenshot = "/tmp/ocrscreenshot.pbm"
++        self.screenshot(ocrscreenshot)
++
++        # read image
++        ocr_img = cv2.imread(ocrscreenshot)
++
++        # --- PREPROCESSING ---
++        # binarize image
++        #TODO: (works better overall, doesn't recognize URL; sth to do with threshold?)
++        # rgb = cv2.cvtColor(ocr_img, cv2.COLOR_BGR2RGB)
++        gray = cv2.cvtColor(ocr_img, cv2.COLOR_BGR2GRAY)
++        bw = cv2.adaptiveThreshold(
++            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 10
++        )
++
++        # RESCALING
++        # at least 300dpi should be the case
++
++        # remove noise via erosion (= dilate text)
++        kernel = np.ones((1, 1), np.uint8)
++        preprocessed_img = cv2.erode(bw, kernel, iterations=1)
++
++        # cv2.imshow("Black White Preprocessed", preprocessed_img)
++        # cv2.waitKey(1)
++
++        results = pytesseract.image_to_data(
++            preprocessed_img, lang="eng+deu", config="--oem 1 --psm 11", output_type=Output.DICT
++        )
++
++        # Then loop over each of the individual text localizations
++        for i in range(0, len(results["text"])):
++            xcoord = -1
++            ycoord = -1
++
++            # extract bounding box coordinates of current text region
++            x = results["left"][i]
++            y = results["top"][i]
++            w = results["width"][i]
++            h = results["height"][i]
++
++            # extract OCR text and confidence of localization
++            text = results["text"][i]  # recognised text
++            conf = results["conf"][i]  # confidence
++
++            # filter out weak confidence text localizations
++            if conf > 0:  # TODO: choose meaningful value
++
++                # display confidence and text
++                # print("Confidence: %d" % (conf))
++                # print("Text: %s\n" % (text))
++
++                # if template is substring of recognised text, set coords and leave
++                # TODO: edge cases?
++                if templatetext.lower() in text.lower():
++                    xmid = x + int(w / 2)
++                    ymid = y + int(h / 2)
++
++                    # Check if ymid is greater than ymin before considering it a match
++                    # print("ymid is", ymid, "and", ymin, "is ymin")
++                    if xmid >= xmin and ymid >= ymin:
++                        xcoord = xmid
++                        ycoord = ymid
++                        break  # Found a match that satisfies the condition
++
++                if showpicture:
++                    # strip out non-ASCII text
++                    # draw text on image and bounding box
++                    text = "".join(text).strip()
++                    cv2.rectangle(ocr_img, (int(x), int(y)), (int(x + w), int(y + h)), (0, 0, 255), 2)
++                    cv2.putText(ocr_img, text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
++
++        if showpicture:
++            # show output image, wait for keypress
++            cv2.imshow("Image", ocr_img)
++            cv2.waitKey(0)
++        # print("Text found at:",xcoord,"and",ycoord)
++        return (xcoord, ycoord)
++
++    def tesseract_find_scroll(self, templatetext, counter, showpicture=False, xmin=0, ymin=0):
++        assert (counter > 1)
++        (x, y) = self.tesseract_find(templatetext, showpicture, xmin, ymin)
++        # print("ymin is:", str(ymin))
++        while x == -1 and counter > 0:
++            self.send_key("pgdn")
++            counter -= 1
++            time.sleep(3)
++            (x, y) = self.tesseract_find(templatetext, showpicture, xmin, ymin)
++
++        if x == -1:
++            self.send_key("ctrl-up")
++
++        return (x, y)
++
++
+     def cv_wait_all(self, templatefilename, seconds):
+         """
+ 

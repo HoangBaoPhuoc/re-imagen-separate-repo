@@ -1,0 +1,7 @@
+opencv-python==4.8.1.78
+Pillow==10.0.1
+#pyautoqemu @ git+https://wiwi-gitlab.uni-muenster.de/itsecurity/pyautoqemu@c6fb78365ce71109446f61d755256c3f09c0f56a
+pytesseract==0.3.10
+python-dateutil==2.8.2
+
+

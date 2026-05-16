@@ -1,0 +1,46 @@
+# Secrets and local config
+.env
+.env.*
+*.env
+config.py
+**/config.py
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.python-version
+.venv/
+venv/
+env/
+ENV/
+
+# Tool caches and test artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Generated project outputs
+logs/
+screenshots/
+evidence/
+reports/
+*.log
+*.csv
+*.json
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
