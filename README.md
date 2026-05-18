@@ -18,16 +18,19 @@ This repository is organized to support two possible execution paths:
 
 ```text
 re-imagen-separate-repo/
-├── Prototype/
-├── reports/
-├── screenshots/
+├── src/
+├── tests/
+├── personas/
+├── vm_scripts/
 ├── logs/
+├── screenshots/
 ├── evidence/
-├── README.md
-└── readme.txt
+├── reports/
+├── Prototype/
+└── README.md
 ```
 
-If you copy the original prototype into this repo, keep the internal structure close to the source project:
+If you copy the original prototype into this repo, keep the internal structure close to the source project, but do not treat it as the active source root:
 
 ```text
 Prototype/
@@ -90,6 +93,59 @@ Depending on the path you choose, install the following tools on the host machin
 4. Record screenshots, logs, and evidence separately.
 5. Compare artifacts and note limitations clearly in the report.
 
+## Real VMware Run Demo
+
+Use this section when you want to demo the pipeline on a real VMware VM instead of the dummy dry-run.
+
+### Prerequisites
+
+- VMware Workstation installed on the host.
+- A Windows guest VM already prepared and bootable.
+- A clean snapshot created before the demo run.
+- `vmrun.exe` available, usually at `C:\Program Files (x86)\VMware\VMware Workstation\vmrun.exe`.
+- Guest credentials that match the VM account used in the scripts.
+
+### Recommended demo flow
+
+1. Restore the VM to the clean snapshot.
+2. Start the guest and confirm it reaches the Windows desktop.
+3. Run the pipeline in real mode with `main_pipeline.py`.
+4. Wait for the VM to finish the activity script and shut down.
+5. Collect the generated log and screenshot files from `logs/` and `screenshots/`.
+6. Create the E01 disk image with FTK Imager or `ewfacquire`.
+7. Import the image into Autopsy and export the artifacts you need for the report.
+
+### Real run command
+
+From the project root, run:
+
+```powershell
+$env:PYTHONPATH = "re-imagen-separate-repo"
+python re-imagen-separate-repo\src\main_pipeline.py re-imagen-separate-repo\personas\activity_script_A.json "E:\VMWare\Virtual Machines\Windows 10 x64\Windows 10 x64.vmx" testuser Password123 --vmrun-path "C:\Program Files (x86)\VMware\VMware Workstation\vmrun.exe"
+```
+
+If you want to rehearse the demo first without touching the VM, add `--dry-run`:
+
+```powershell
+$env:PYTHONPATH = "re-imagen-separate-repo"
+python re-imagen-separate-repo\src\main_pipeline.py re-imagen-separate-repo\personas\activity_script_A.json "C:\Path\To\YourVM.vmx" testuser Password123 --vmrun-path "C:\Program Files (x86)\VMware\VMware Workstation\vmrun.exe" --dry-run
+```
+
+### What to show in the demo
+
+- The persona JSON and activity script JSON.
+- The generated CSV in `vm_scripts/`.
+- The execution log in `logs/`.
+- The screenshots in `screenshots/`.
+- The E01 image hash and the Autopsy artifact export.
+
+### If something fails
+
+- Check that the VM snapshot is clean and the guest is powered on correctly.
+- Verify the `vmrun.exe` path.
+- Confirm the guest username and password in the command line.
+- Re-run once with `--dry-run` if you only need to verify the pipeline logic.
+
 ## What Goes Where
 
 - `Prototype/`: source code and prototype assets.
@@ -118,6 +174,50 @@ Depending on the path you choose, install the following tools on the host machin
 7. Analyze with Autopsy.
 8. Save evidence and report outputs.
 
+## Quick Start — Run pipeline end-to-end
+
+Use these condensed steps to run the pipeline from this repository root and produce an EWF image ready for Autopsy.
+
+1. On the Windows host (PowerShell), from the repository root:
+
+```powershell
+cd re-imagen-separate-repo
+python src/generate_personas.py
+python src/translation.py
+python src/vm_executor.py khoa   # or: python src/vm_executor.py phuc
+```
+
+Wait until the script prints `✓ VM tắt xong`.
+
+2. In WSL (convert VMDK → raw, then acquire EWF):
+
+```bash
+# run in WSL or via `wsl qemu-img ...` from PowerShell
+qemu-img convert -p -O raw "/mnt/e/VMWare/Virtual Machines/Windows 10 x64/Windows 10 x64.vmdk" windows10.img
+
+sudo ewfacquire \
+    -t "/mnt/e/UIT/HK6/Forensics/project/re-imagen-separate-repo/disk_images/khoa" \
+    -f encase6 -c best -m removable \
+    -e "Re-imagen" \
+    -d "Persona Huynh Dang Khoa – IT student HCMC" \
+    "windows10.img"
+
+# verify the created E01
+ewfverify "/mnt/e/UIT/HK6/Forensics/project/re-imagen-separate-repo/disk_images/khoa.E01"
+```
+
+3. Import into Autopsy: New Case → Add Data Source → point to `disk_images/khoa.E01`. Use ingest modules: Recent Activity, Web Artifacts, Keyword Search, File Type ID.
+
+4. Evaluate coherence (host):
+
+```powershell
+python src/evaluator.py
+```
+
+5. Cleanup: after `ewfverify` succeeds you can remove `windows10.img` to free space.
+
+See `Re-imagen-guide-deploy.md` for full step-by-step details and troubleshooting.
+
 ## Notes
 
 - Keep the source copy and the working copy separate if you want to maintain a clean Git history.
@@ -138,5 +238,3 @@ Depending on the path you choose, install the following tools on the host machin
 - [ ] Screenshots, logs, and evidence saved
 
 ## Reference
-
-For the full step-by-step plan, use the detailed guide in `readme.txt`.

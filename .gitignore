@@ -35,6 +35,7 @@ reports/
 *.log
 *.csv
 *.json
+*.img
 
 # OS and editor files
 .DS_Store
@@ -44,3 +45,8 @@ Desktop.ini
 
 # Notebook checkpoints
 .ipynb_checkpoints/
+disk_images/
+*.img
+*.E0*
+qemu-img
+

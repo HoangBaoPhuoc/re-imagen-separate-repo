@@ -1,0 +1,11 @@
+# config.py
+
+OPENAI_API_KEY = "sk-..."   # GPT-4o API key của bạn
+
+VMRUN = r"C:\Program Files (x86)\VMware\VMware Workstation\vmrun.exe"
+VMX   = r"C:\Users\YourName\Virtual Machines\Windows 10\Windows 10.vmx"
+VMDK  = r"C:\Users\YourName\Virtual Machines\Windows 10\Windows 10.vmdk"
+
+GUEST_USER = "testuser"
+GUEST_PASS = "Password123"
+DESKTOP    = r"C:\Users\testuser\Desktop"
