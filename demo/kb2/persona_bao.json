@@ -1,0 +1,41 @@
+{
+  "full_name": "Chau Hoang Phuc",
+  "name": "Phuc",
+  "age": 23,
+  "gender": "male",
+  "location": "Ho Chi Minh City, Vietnam",
+  "language": "Vietnamese (native), English (basic)",
+  "occupation": "Undergraduate student, History",
+  "institution": "University of Information Technology (UIT)",
+  "interests": [
+    "Vietnamese history",
+    "digital archives",
+    "historical documentaries",
+    "technology in education"
+  ],
+  "hobbies": [
+    "reading historical novels",
+    "visiting museums",
+    "playing chess",
+    "exploring local cuisine"
+  ],
+  "education": "Pursuing a Bachelor's degree in History at UIT",
+  "online_behavior": "Phuc often searches for historical content online, uses social media to connect with peers, and occasionally participates in online forums related to history and technology.",
+  "information_needs": [
+    "Research materials for historical studies",
+    "Learning resources for technology in education",
+    "Updates on local cultural events"
+  ],
+  "it_proficiency": "intermediate",
+  "devices": [
+    "laptop",
+    "smartphone",
+    "tablet"
+  ],
+  "unique_attributes": [
+    "Combines interest in history with technology",
+    "Actively engages in cultural discussions",
+    "Bilingual in Vietnamese and English"
+  ],
+  "summary": "Chau Hoang Phuc is a 23-year-old history undergraduate at UIT in Ho Chi Minh City. He is passionate about Vietnamese history and keen on integrating technology into education. Phuc is bilingual, speaks Vietnamese fluently, and is improving his English skills. He actively seeks out historical content and engages with the tech community, embodying a blend of cultural heritage and modern technological interests."
+}
