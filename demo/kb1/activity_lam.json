@@ -1,0 +1,76 @@
+[
+  {
+    "time": "2025-06-14T20:00:00+07:00",
+    "activity": "computer_on"
+  },
+  {
+    "time": "2025-06-14T20:02:35+07:00",
+    "activity": "google_search",
+    "search_term": "latest advancements in artificial intelligence 2025"
+  },
+  {
+    "time": "2025-06-14T20:07:48+07:00",
+    "activity": "google_search",
+    "search_term": "how to improve coding skills efficiently"
+  },
+  {
+    "time": "2025-06-14T20:15:22+07:00",
+    "activity": "google_search",
+    "search_term": "best practices in cybersecurity for beginners"
+  },
+  {
+    "time": "2025-06-14T20:22:10+07:00",
+    "activity": "google_search",
+    "search_term": "Vietnamese tech startups success stories"
+  },
+  {
+    "time": "2025-06-14T20:28:09+07:00",
+    "activity": "google_search",
+    "search_term": "AI programming competitions 2025"
+  },
+  {
+    "time": "2025-06-14T20:35:45+07:00",
+    "activity": "google_search",
+    "search_term": "how to participate in international hackathons"
+  },
+  {
+    "time": "2025-06-14T20:45:03+07:00",
+    "activity": "google_search",
+    "search_term": "scholarship opportunities for computer science students in Vietnam"
+  },
+  {
+    "time": "2025-06-14T20:57:38+07:00",
+    "activity": "google_search",
+    "search_term": "top cybersecurity certifications 2025"
+  },
+  {
+    "time": "2025-06-14T21:08:15+07:00",
+    "activity": "google_search",
+    "search_term": "guitar tutorials for beginners"
+  },
+  {
+    "time": "2025-06-14T21:20:40+07:00",
+    "activity": "create_text_document",
+    "file_name": "Startup Ideas 2025.txt",
+    "content": "1. AI-based personal finance assistant\n2. Cybersecurity solutions for small businesses\n3. Online platform for coding mentorship\n4. App for exploring street food with AR\n5. Community for tech enthusiasts to share projects"
+  },
+  {
+    "time": "2025-06-14T21:42:57+07:00",
+    "activity": "google_search",
+    "search_term": "how to start a tech company in Vietnam"
+  },
+  {
+    "time": "2025-06-14T22:05:31+07:00",
+    "activity": "google_search",
+    "search_term": "cybersecurity news June 2025"
+  },
+  {
+    "time": "2025-06-14T22:45:12+07:00",
+    "activity": "google_search",
+    "search_term": "best video games of 2025"
+  },
+  {
+    "time": "2025-06-14T23:00:00+07:00",
+    "activity": "computer_off"
+  }
+]

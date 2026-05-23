@@ -1,0 +1,45 @@
+{
+  "full_name": "Khieu Bao Lam",
+  "name": "Lam",
+  "age": 22,
+  "gender": "male",
+  "location": "Ho Chi Minh City, Vietnam",
+  "language": "Vietnamese (native), English (intermediate)",
+  "occupation": "Undergraduate student, Computer Science",
+  "institution": "University of Information Technology (UIT)",
+  "interests": [
+    "artificial intelligence",
+    "programming",
+    "video games",
+    "startups",
+    "cybersecurity"
+  ],
+  "hobbies": [
+    "coding",
+    "playing guitar",
+    "gaming",
+    "watching movies",
+    "exploring street food"
+  ],
+  "education": "Pursuing a Bachelor's degree in Computer Science at UIT",
+  "online_behavior": "Khoa frequently visits online forums and communities related to programming and technology. He often streams coding tutorials on YouTube and follows tech influencers on social media. He also enjoys participating in hackathons and online coding competitions.",
+  "information_needs": [
+    "latest technology trends",
+    "programming tutorials",
+    "scholarship opportunities",
+    "job openings in tech",
+    "cybersecurity updates"
+  ],
+  "it_proficiency": "advanced",
+  "devices": [
+    "laptop",
+    "smartphone",
+    "tablet"
+  ],
+  "unique_attributes": [
+    "passionate about AI",
+    "keen interest in cybersecurity",
+    "frequent hackathon participant"
+  ],
+  "summary": "Lam is a tech-savvy and ambitious Computer Science undergraduate who is deeply interested in artificial intelligence and cybersecurity. He is an active participant in the tech community, always eager to learn and grow. His hobbies and interests align with his future aspirations of starting his own tech company."
+}
