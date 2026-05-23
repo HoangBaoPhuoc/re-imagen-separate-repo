@@ -1,11 +1,11 @@
-r"""
-VMwareAdapter v4 – vmrun runProgramInGuest với argument đúng cú pháp.
+﻿r"""
+VMwareAdapter v4 - vmrun runProgramInGuest với argument đúng cú pháp.
 
 Root cause v1/v2:
   vmrun runProgramInGuest <vmx> <program> <args>
-  → program và args là 2 tham số RIÊNG BIỆT, không được ghép vào nhau.
-  → Sai:  vmrun ... "C:\cmd.exe /c start url"   (ghép)
-  → Đúng: vmrun ... "C:\cmd.exe" "/c start url"  (tách)
+  -> program và args là 2 tham số RIÊNG BIỆT, không được ghép vào nhau.
+  -> Sai:  vmrun ... "C:\cmd.exe /c start url"   (ghép)
+  -> Đúng: vmrun ... "C:\cmd.exe" "/c start url"  (tách)
 
 Fix v4:
   - Dùng explorer.exe để mở URL (không cần Firefox cài)
@@ -32,7 +32,7 @@ LOG_DIR = Path("logs");        LOG_DIR.mkdir(exist_ok=True)
 SS_DIR  = Path("screenshots"); SS_DIR.mkdir(exist_ok=True)
 _fh = None
 
-# ── Logging ────────────────────────────────────────────────────────────
+# -- Logging -----------------------------------------------------------------------
 
 def log(msg: str):
     line = f"[{datetime.now().strftime('%H:%M:%S')}] {msg}"
@@ -41,7 +41,7 @@ def log(msg: str):
         _fh.write(line + "\n")
         _fh.flush()
 
-# ── vmrun wrappers ─────────────────────────────────────────────────────
+# -- vmrun wrappers -----------------------------------------------------------------
 
 def vmrun(*args) -> subprocess.CompletedProcess:
     """vmrun không cần guest auth (host-level ops)."""
@@ -105,39 +105,40 @@ def ss(label: str):
     path = str(SS_DIR / f"{label}_{datetime.now().strftime('%H%M%S')}.png")
     r = vmrun_capture_screen(path)
     if r.returncode == 0:
-        log(f"  📸 {Path(path).name}")
+        log(f"  [SS] {Path(path).name}")
         return
 
     try:
         if ImageGrab is None:
             raise RuntimeError("Pillow is not available")
         ImageGrab.grab(all_screens=True).save(path)
-        log(f"  📸 {Path(path).name} (host fallback)")
+        log(f"  [SS] {Path(path).name} (host fallback)")
     except Exception as exc:
         log(f"  screenshot failed: {exc}")
 
-# ── URL open via explorer (không cần Firefox) ──────────────────────────
+# -- URL open via explorer (khong can Firefox) --------------------------------------
 
 def open_url_in_guest(url: str) -> bool:
     """
-    Mở URL bằng explorer.exe — gọi default browser của Windows.
+    Mở URL bằng explorer.exe - gọi default browser của Windows.
     Không cần biết Firefox cài ở đâu, hoặc dùng Edge cũng được.
-    explorer.exe <url> là cách Windows-native, không để trace automation.
+    explorer.exe <url> la cach Windows-native, khong de trace automation.
     """
+    # explorer.exe nhận URL trực tiếp, không cần -interactive
     r = vmrun_g(
         "runProgramInGuest",
-        r"C:\Windows\System32\cmd.exe",
-        f'/c start "" "{url}"',
-        no_wait=False,
-        interactive=True,
+        r"C:\Windows\explorer.exe",
+        url,
+        no_wait=True,
+        interactive=False,
     )
     return r.returncode == 0
 
-# ── File creation via temp file + CopyFileFromHostToGuest ─────────────
+# -- File creation via temp file + CopyFileFromHostToGuest --------------------------
 
 def copy_file_to_guest(local_path: str, guest_path: str) -> bool:
     """
-    vmrun CopyFileFromHostToGuest — cú pháp: vmrun op vmx src dst
+    vmrun CopyFileFromHostToGuest - cú pháp: vmrun op vmx src dst
     (không phải runProgramInGuest, khác cú pháp)
     """
     cmd = [
@@ -154,7 +155,7 @@ def copy_file_to_guest(local_path: str, guest_path: str) -> bool:
         log(f"  CopyFile ERR[{r.returncode}]: {r.stderr.strip()[:120]}")
     return r.returncode == 0
 
-# ── Commands ───────────────────────────────────────────────────────────
+# -- Commands -----------------------------------------------------------------------
 
 def wait_for_guest_ready(timeout=120):
     """Chờ đến khi listProcessesInGuest thành công."""
@@ -165,7 +166,7 @@ def wait_for_guest_ready(timeout=120):
                "listProcessesInGuest", config.VMX]
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode == 0:
-            log("  Guest ready ✓")
+            log("  Guest ready ")
             return True
         log("  Guest not ready, retry in 10s...")
         time.sleep(10)
@@ -188,11 +189,11 @@ def start_computer(a1, a2):
         ]
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode == 0:
-            log("  ✓ Guest ready!")
+            log("  Guest ready ")
             break
         log(f"  still booting... ({int(deadline - time.time())}s left)")
     else:
-        log("  ⚠ Timeout waiting for guest – continuing anyway")
+        log("  Timeout waiting for guest - continuing anyway")
     
     time.sleep(5)  # thêm buffer nhỏ sau khi Tools sẵn sàng
     ss("desktop_ready")
@@ -205,7 +206,7 @@ def login_user(password, a2):
 
 def firefox_first_search(term, a2):
     url = f"https://www.google.com/search?q={term.replace(' ', '+')}"
-    log(f"Open browser → '{term}'")
+    log(f"Open browser -> '{term}'")
     ok = open_url_in_guest(url)
     if not ok:
         log("  explorer failed, retrying...")
@@ -216,7 +217,7 @@ def firefox_first_search(term, a2):
 
 def firefox_new_search(term, a2):
     url = f"https://www.google.com/search?q={term.replace(' ', '+')}"
-    log(f"New search → '{term}'")
+    log(f"New search -> '{term}'")
     open_url_in_guest(url)
     time.sleep(6)
     ss(f"s_{term[:20].replace(' ','_')}")
@@ -224,25 +225,88 @@ def firefox_new_search(term, a2):
 def create_text_file(fname, content_esc):
     content = content_esc.replace("\\n", "\n")
 
-    # Ghi ra file tạm trên host
-    tmp = Path(tempfile.mktemp(suffix=".txt"))
-    tmp.write_text(content, encoding="utf-8-sig")  # utf-8-sig để Notepad hiển thị đúng
+    # fname có thể là "FolderName/filename" (subfolder) hoặc chỉ "filename"
+    if "/" in fname:
+        folder, filename = fname.split("/", 1)
+        guest_dir  = f"C:\\Users\\{config.GUEST_USER}\\Desktop\\{folder}"
+        guest_path = f"{guest_dir}\\{filename}"
+    else:
+        filename   = fname
+        guest_path = f"C:\\Users\\{config.GUEST_USER}\\Desktop\\{filename}"
 
-    guest_path = f"C:\\Users\\{config.GUEST_USER}\\Desktop\\{fname}.txt"
-    log(f"Copying file → {fname}.txt")
+    if not guest_path.lower().endswith(".txt"):
+        guest_path += ".txt"
+
+    tmp = Path(tempfile.mktemp(suffix=".txt"))
+    tmp.write_text(content, encoding="utf-8-sig")
+
+    log(f"Copying file -> {guest_path.split(chr(92))[-1]}")
     ok = copy_file_to_guest(str(tmp), guest_path)
     tmp.unlink(missing_ok=True)
 
     if ok:
-        log(f"  File copied OK → Desktop/{fname}.txt")
+        log(f"  File copied OK -> {guest_path}")
     time.sleep(3)
-    ss(f"f_{fname}")
+    ss_label = fname.replace("/", "_").replace(" ", "_")[:20]
+    ss(f"f_{ss_label}")
+
+
+def create_folder(folder_name, a2):
+    guest_path = f"C:\\Users\\{config.GUEST_USER}\\Desktop\\{folder_name}"
+    log(f"Creating folder -> Desktop/{folder_name}")
+    vmrun_g("runProgramInGuest",
+            r"C:\Windows\System32\cmd.exe",
+            f'/c mkdir "{guest_path}"',
+            no_wait=False, interactive=False)
+    time.sleep(2)
+    ss(f"mkdir_{folder_name[:15].replace(' ', '_')}")
+
+
+
+def download_file(url, file_name):
+    guest_path = f"C:\\Users\\{config.GUEST_USER}\\Desktop\\{file_name}"
+    bat_guest  = f"C:\\Users\\{config.GUEST_USER}\\AppData\\Local\\Temp\\reimagen_dl.bat"
+    log(f"Downloading -> {file_name}  ({url[:60]})")
+
+    # Write batch file on host then copy to guest to avoid nested quoting via vmrun
+    tmp = Path(tempfile.mktemp(suffix=".bat"))
+    tmp.write_text(
+        f'curl -L -s --max-time 60 -o "{guest_path}" "{url}"\r\n',
+        encoding="utf-8",
+    )
+    ok = copy_file_to_guest(str(tmp), bat_guest)
+    tmp.unlink(missing_ok=True)
+    if not ok:
+        log("  Failed to copy download batch to guest")
+        return
+
+    vmrun_g("runProgramInGuest",
+            r"C:\Windows\System32\cmd.exe",
+            f"/c {bat_guest}",
+            no_wait=False, interactive=False)
+    time.sleep(15)
+    ss(f"dl_{file_name[:20].replace(' ', '_')}")
+
+
+def delete_file(file_path, a2):
+    # file_path có thể là "file.txt" hoặc "FolderName/file.txt"
+    normalized = file_path.replace("/", "\\")
+    guest_path = f"C:\\Users\\{config.GUEST_USER}\\Desktop\\{normalized}"
+    log(f"Deleting -> Desktop/{file_path}")
+    vmrun_g("runProgramInGuest",
+            r"C:\Windows\System32\cmd.exe",
+            f'/c del /f /q "{guest_path}"',
+            no_wait=False, interactive=False)
+    time.sleep(2)
+    ss_label = file_path.replace("/", "_").replace(" ", "_")[:20]
+    ss(f"del_{ss_label}")
+
 
 def shutdown_computer(a1, a2):
     log("Shutdown via vmrun stop soft...")
     r = vmrun("stop", "soft")
     if r.returncode != 0:
-        log("  soft failed → hard stop")
+        log("  soft failed -> hard stop")
         vmrun("stop", "hard")
     time.sleep(15)
     log("VM off")
@@ -253,10 +317,13 @@ DISPATCH = {
     "firefox_first_search":  firefox_first_search,
     "firefox_new_search":    firefox_new_search,
     "create_text_file":      create_text_file,
+    "create_folder":         create_folder,
+    "download_file":         download_file,
+    "delete_file":           delete_file,
     "shutdown_computer":     shutdown_computer,
 }
 
-# ── Debug ──────────────────────────────────────────────────────────────
+# -- Debug -------------------------------------------------------------------------
 
 def debug_check():
     print("=== DEBUG v4 ===\n")
@@ -284,11 +351,11 @@ def debug_check():
     guest_path = f"C:\\Users\\{config.GUEST_USER}\\Desktop\\copy_test.txt"
     ok = copy_file_to_guest(str(tmp), guest_path)
     tmp.unlink(missing_ok=True)
-    print(f"  ok={ok} → check Desktop in VM for copy_test.txt")
+    print(f"  ok={ok} -> check Desktop in VM for copy_test.txt")
 
     print("\n[3] open_url_in_guest (explorer.exe https://google.com)...")
     ok3 = open_url_in_guest("https://www.google.com")
-    print(f"  ok={ok3} → check VM screen: browser should open")
+    print(f"  ok={ok3} -> check VM screen: browser should open")
     time.sleep(5)
     ss("debug_browser_test")
     print(f"  Screenshot saved to screenshots/")
@@ -298,9 +365,9 @@ def debug_check():
     print(f"  Check screenshots/ folder")
 
     print("\n=== DEBUG DONE ===")
-    print("Nếu [2] và [3] đều OK → chạy: python src/vm_executor.py khoa")
+    print("Nếu [2] và [3] đều OK -> chạy: python src/vm_executor.py khoa")
 
-# ── Main ───────────────────────────────────────────────────────────────
+# -- Main --------------------------------------------------------------------------
 
 def run(pid: str):
     global _fh
@@ -327,9 +394,9 @@ def run(pid: str):
             log(f"  [SKIP] unknown: {cmd}")
         time.sleep(2)
 
-    log(f"=== DONE. Log → {log_path} ===")
+    log(f"=== DONE. Log -> {log_path} ===")
     _fh.close()
-    print(f"\n✓ Xong. VM đã tắt. Tiếp theo: ewfacquire trong WSL.")
+    print(f"\n[OK] Xong. VM đã tắt. Tiếp theo: ewfacquire trong WSL.")
 
 
 if __name__ == "__main__":

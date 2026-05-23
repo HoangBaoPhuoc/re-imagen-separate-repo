@@ -29,15 +29,34 @@ def translate(pid: str):
             rows.append([t, cmd, item["search_term"], ""])
             browser_open = True
 
+        elif act == "create_folder":
+            rows.append([t, "create_folder", item["folder_name"], ""])
+
         elif act == "create_text_document":
+            folder = item.get("folder", "")
+            fname  = f"{folder}/{item['file_name']}" if folder else item["file_name"]
             rows.append([t, "create_text_file",
-                         item["file_name"],
+                         fname,
                          item.get("content", "").replace("\n", "\\n")])
+
+        elif act == "download_file":
+            rows.append([t, "download_file", item["url"], item["file_name"]])
+
+        elif act == "delete_file":
+            rows.append([t, "delete_file", item["file_name"], ""])
 
     with dst.open("w", newline="", encoding="utf-8") as f:
         csv.writer(f).writerows(rows)
-    print(f"[OK] {len(rows)-1} commands → {dst}")
+    print(f"[OK] {len(rows)-1} commands -> {dst}")
 
 if __name__ == "__main__":
-    translate("khoa")
-    translate("phuc")
+    if sys.argv[1:]:
+        ids = sys.argv[1:]
+    else:
+        ids = [p.stem.replace("activity_", "")
+               for p in sorted(Path("personas").glob("activity_*.json"))]
+        if not ids:
+            sys.exit("[ERROR] No activity_*.json found in personas/")
+
+    for pid in ids:
+        translate(pid)
