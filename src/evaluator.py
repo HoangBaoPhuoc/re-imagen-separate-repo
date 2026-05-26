@@ -25,14 +25,13 @@ def _normalize(word: str) -> str:
     return word
 
 def _extract_keywords(persona: dict) -> set:
+    # Only use the most specific fields — broad paragraph fields (online_behavior,
+    # information_needs) make every GPT-generated search match trivially.
     keywords = set()
     text_fields = [
         persona.get("occupation", ""),
         " ".join(persona.get("interests", [])),
         " ".join(persona.get("hobbies", [])),
-        " ".join(persona.get("information_needs", [])),
-        " ".join(persona.get("unique_attributes", [])),
-        persona.get("online_behavior", ""),
     ]
     for text in text_fields:
         for word in text.lower().replace("-", " ").split():
@@ -93,7 +92,12 @@ def print_report(r):
         print(f"  {'[OK]' if d['matched'] else '[--]'} {d['term'][:48]:48s} {d['matched']}")
 
 if __name__ == "__main__":
-    ids = sys.argv[1:] or ["khoa", "phuc"]
+    ids = sys.argv[1:] or [
+        p.stem.replace("persona_", "")
+        for p in sorted(Path("personas").glob("persona_*.json"))
+    ]
+    if not ids:
+        sys.exit("[ERROR] No persona_*.json found in personas/")
     reports = [evaluate(pid) for pid in ids]
     for r in reports: print_report(r)
     if len(reports) == 2:

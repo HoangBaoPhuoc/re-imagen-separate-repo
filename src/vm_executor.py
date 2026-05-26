@@ -1,16 +1,5 @@
 ﻿r"""
 VMwareAdapter v4 - vmrun runProgramInGuest với argument đúng cú pháp.
-
-Root cause v1/v2:
-  vmrun runProgramInGuest <vmx> <program> <args>
-  -> program và args là 2 tham số RIÊNG BIỆT, không được ghép vào nhau.
-  -> Sai:  vmrun ... "C:\cmd.exe /c start url"   (ghép)
-  -> Đúng: vmrun ... "C:\cmd.exe" "/c start url"  (tách)
-
-Fix v4:
-  - Dùng explorer.exe để mở URL (không cần Firefox cài)
-  - Dùng cmd.exe /c copy để tạo file text
-  - Argument truyền đúng kiểu subprocess list (không shell=True)
 """
 import csv
 import subprocess
@@ -116,15 +105,12 @@ def ss(label: str):
     except Exception as exc:
         log(f"  screenshot failed: {exc}")
 
-# -- URL open via explorer (khong can Firefox) --------------------------------------
+# -- URL open via explorer --------------------------------------
 
 def open_url_in_guest(url: str) -> bool:
     """
     Mở URL bằng explorer.exe - gọi default browser của Windows.
-    Không cần biết Firefox cài ở đâu, hoặc dùng Edge cũng được.
-    explorer.exe <url> la cach Windows-native, khong de trace automation.
     """
-    # explorer.exe nhận URL trực tiếp, không cần -interactive
     r = vmrun_g(
         "runProgramInGuest",
         r"C:\Windows\explorer.exe",
